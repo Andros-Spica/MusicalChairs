@@ -29,14 +29,14 @@ breed [ stakeholders stakeholder ]
 ;;;;;;;;;;;;;;;;;
 
 globals
-[  
+[
   totalPatches
-  
+
   ;;; modified parameters
   initH initF
-  intGrowthF intGrowthH maxExtGrowthF maxExtGrowthH 
+  intGrowthF intGrowthH maxExtGrowthF maxExtGrowthH
   hrmi herdingIntegration farmingIntegration
-  
+
   ;;; counters and final measures
   countLandUseF countLandUseH
   competitions landUseChangeEvents
@@ -55,34 +55,34 @@ stakeholders-own [ hasLand activity intensity independence ]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 to setup
-  
+
   clear-all
-  
+
   set totalPatches count patches
-  
+
   ;;; setup parameters depending on the type of experiment
-  if (typeOfExperiment = "random") 
+  if (typeOfExperiment = "random")
   [
     ; set random seed
     let aSeed new-seed
     random-seed aSeed
     set seed aSeed
-    
+
     set intGrowthF 0.01 + random-float farming_intrinsic_growth_rate
     set maxExtGrowthF 0.001 + random-float max_farming_extrinsic_growth_rate
     set farmingIntegration random-float 1
     set intGrowthH 0.01 + random-float herding_intrinsic_growth_rate
     set maxExtGrowthH 0.001 + random-float max_herding_extrinsic_growth_rate
     set herdingIntegration random-float 1
-    set initH random round ((init_herding / 100) * totalPatches) 
+    set initH random round ((init_herding / 100) * totalPatches)
     set initF random round ((init_farming / 100) * totalPatches)
     set hrmi ((1 + (random-float 10) ) / (1 + (random-float 10) )) ;; set a random value between 0.1 and 10 (around 1)
   ]
   if (typeOfExperiment = "defined by GUI")
-  [ 
+  [
     ; set random seed
     random-seed seed
-    
+
     set intGrowthF farming_intrinsic_growth_rate
     set maxExtGrowthF max_farming_extrinsic_growth_rate
     set farmingIntegration farming_integration
@@ -99,7 +99,7 @@ to setup
     let aSeed new-seed
     random-seed aSeed
     set seed aSeed
-    
+
     load-experiment
   ]
 
@@ -109,10 +109,10 @@ to setup
   [
     set landUse "F"
     sprout-stakeholders 1
-    [ 
+    [
       set hidden? true
       set hasLand true
-      set activity "F" 
+      set activity "F"
       set intensity random-float 1
       set independence random-float 1
     ]
@@ -122,46 +122,50 @@ to setup
   [
     set landUse "H"
     sprout-stakeholders 1
-    [ 
+    [
       set hidden? true
       set hasLand true
-      set activity "H" 
+      set activity "H"
       set intensity random-float hrmi
       set independence random-float 1
     ]
     set myStakeholder one-of stakeholders-here
   ]
-  
+
   ;;; initialize visualization
   update_visualization
-   
+
   reset-ticks
-    
+
 end
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; CYCLE ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 to go
-  
+
   ;;; This procedure is the cycle of the model (what happens during one "tick").
-  
+
   reset-counters
-  
+
   growth
-  
+
   landUse-expansion
-  
+
   check_competitions
-  
+
   update_visualization
-  
+
   tick
   if ticks > endSimulation [stop]
-  
+
 end
 
 to reset-counters
-  
+
   ;;; This procedure reset all counters which are used either during the cycle or summarized at the "update-visualization" procedure.
-  
+
   set farmingDemand 0
   set herdingDemand 0
   set farmingGrowth 0
@@ -170,14 +174,14 @@ to reset-counters
   set herdingDeterrence 0
   set competitions 0
   set landUseChangeEvents 0
-  
+
 end
 
 to growth
-  
+
   ;;; This procedure calculates the demand for each land use class, based on both the intrinsic and extrinsic growth rates of each of them.
   ;;; Note that growth rates are dependent on parameters, but also on the context, and may vary from one "tick" to another.
-  
+
   ;;; FARMING
   ;;; Intrinsic Demand
   ask patches with [landUse = "F"]
@@ -185,10 +189,10 @@ to growth
     if ( random-float 1 <= intGrowthF )
     [
       sprout-stakeholders 1
-      [ 
+      [
         set hidden? true
         set hasLand false ;;; still landless
-        set activity "F" 
+        set activity "F"
         set intensity [intensity] of myStakeholder
         set independence [independence] of myStakeholder
       ]
@@ -202,17 +206,17 @@ to growth
     ask patch 0 0
     [
       sprout-stakeholders 1
-      [ 
+      [
         set hidden? true
         set hasLand false ;;; still landless
-        set activity "F" 
+        set activity "F"
         set intensity random-float 1
         set independence random-float 1
       ]
     ]
     set farmingDemand farmingDemand + 1
   ]
-  
+
   ;;; HERDING
   ;;; Intrinsic Growth
   ask patches with [landUse = "H"]
@@ -220,10 +224,10 @@ to growth
     if ( random-float 1 <= intGrowthH )
     [
       sprout-stakeholders 1
-      [ 
+      [
         set hidden? true
         set hasLand false ;;; still landless
-        set activity "H" 
+        set activity "H"
         set intensity [intensity] of myStakeholder
         set independence [independence] of myStakeholder
       ]
@@ -237,30 +241,30 @@ to growth
     ask patch max-pxcor max-pycor
     [
       sprout-stakeholders 1
-      [ 
+      [
         set hidden? true
         set hasLand false ;;; still landless
-        set activity "H" 
+        set activity "H"
         set intensity random-float 1
         set independence random-float 1
       ]
     ]
     set herdingDemand herdingDemand + 1
   ]
-  
+
 end
 
 to landUse-expansion
-  
+
   ;;; This procedure calls for the expansion procedures of farming and herding, intentionally in this order.
-  
+
   farming-expansion
   herding-expansion
-  
+
 end
 
 to farming-expansion
-  
+
   if (any? stakeholders with [ activity = "F" AND hasLand = false ])
   [
     ask stakeholders with [ activity = "F" AND hasLand = false ]
@@ -279,19 +283,19 @@ to farming-expansion
               set landUse "F"
               set myStakeholder me
               ask me [ set hasLand true move-to aPatch ]
-              
+
               set landUseChangeEvents landUseChangeEvents + 1
               set farmingGrowth farmingGrowth + 1
             ]
             [
               if ( [independence] of me > (count patches with [landUse = "H"] / totalPatches) ) ;;; Volition-opportunity exclusion
-              [ 
+              [
                 ;;; the farming stakeholder will start using the pastureland
                 set landUse "F"
                 ask myStakeholder [ set hasLand false ]
                 set myStakeholder me
                 ask me [ set hasLand true move-to aPatch ]
-                
+
                 set landUseChangeEvents landUseChangeEvents + 1
                 set farmingGrowth farmingGrowth + 1
                 set herdingDeterrence herdingDeterrence + 1
@@ -303,11 +307,11 @@ to farming-expansion
     ]
   ]
   ask stakeholders with [ activity = "F" AND hasLand = false ] [ die ]
-   
+
 end
 
 to herding-expansion
-  
+
   ;;; reset herding patches (herds go back not necessarily to the same patch), but keep track of the herding stakeholders that already used the territory
   let oldHerdingStakeholders [myStakeholder] of patches with [landUse = "H"]
   ask patches with [landUse = "H"]
@@ -315,7 +319,7 @@ to herding-expansion
     ask myStakeholder [ set hasLand false ]
     set myStakeholder nobody
   ]
-  
+
   if (any? stakeholders with [ activity = "H" AND hasLand = false ])
   [
     ask stakeholders with [ activity = "H" AND hasLand = false ]
@@ -339,7 +343,7 @@ to herding-expansion
               set landUse "H"
               set myStakeholder me
               ask me [ set hasLand true ]
-              
+
               set landUseChangeEvents landUseChangeEvents + 1
               set herdingGrowth herdingGrowth + 1
             ]
@@ -360,16 +364,16 @@ to herding-expansion
       ]
     ]
   ]
-  
-  ;;; rangelands not claimed will be considered free land (no land use) 
+
+  ;;; rangelands not claimed will be considered free land (no land use)
   if (any? patches with [landUse = "H" and myStakeholder = nobody] ) [ ask patches with [landUse = "H" and myStakeholder = nobody] [ set landUse "N" ] ]
-  
+
 end
 
 to check_competitions
-  
+
   ask patches with [ landUse = "F" AND count contenders > 0 ]
-  [ 
+  [
     repeat count contenders [ resolve_competition ]
   ]
   ask stakeholders with [ activity = "H" AND hasLand = false ] [ die ]
@@ -386,7 +390,7 @@ to resolve_competition
   let farmingSupport 0
   if (farmingSupporters > 0) [ set farmingSupport sum [intensity] of n-of farmingSupporters stakeholders with [activity = "F" AND self != defender] ]
   let farmingIntensity ([intensity] of myStakeholder + farmingSupport )
-  
+
   ;;;;; select one herding stakeholder and its supporters, calculate the intensity of the herding land use to be involved in the same land use unit
   ;;; get contender and exlude it from contenders
   let contender one-of contenders
@@ -400,22 +404,22 @@ to resolve_competition
   let ratio_of_intensities  (herdingIntensity /(farmingIntensity + herdingIntensity))
   let index_of_opportunity ((count patches with [landUse = "F"]) / totalPatches)
   let incentives_to_relinquish (1 - (ratio_of_intensities * index_of_opportunity))
-  
+
   ask contender
   [
     ;;; Does the herding stakeholder attempt to replace the farming stakeholder?
     ifelse ( independence < incentives_to_relinquish)
-    
+
     ;;; No. The herding stakeholder is repressed.
     [ die ]
-    
+
     ;;; Yes. A competitive situation is produced.
-    [ 
+    [
       set competitions (competitions + 1)
-      
+
       ;;; Does the competitive situation evolves into a land use change event?
       ifelse (random-float 1 < ratio_of_intensities)
-      
+
       ;;; Yes. The farming stakeholder is repressed.
       [
         ask defender [ die ]
@@ -426,48 +430,48 @@ to resolve_competition
         set herdingGrowth herdingGrowth + 1
         set farmingDeterrence farmingDeterrence + 1
       ]
-      
+
       ;;; No. The herding stakeholder is repressed.
       [ die ]
-    ] 
+    ]
   ]
-  
+
 end
 
 to update_visualization
-  
+
   set farmingBalance (farmingGrowth - farmingDeterrence)
   set herdingBalance (herdingGrowth - herdingDeterrence)
-  
+
   set countLandUseF count patches with [landUse = "F"]
   set countLandUseH count patches with [landUse = "H"]
-  
+
   ifelse (countLandUseF > 0)
-  [ 
+  [
     set meanFarmingIntensity (mean [intensity] of stakeholders with [activity = "F"])
     set meanFarmingIndependence (mean [independence] of stakeholders with [activity = "F"])
   ]
-  [ 
+  [
     set meanFarmingIntensity ""
     set meanFarmingIndependence ""
   ]
-  
+
   ifelse (countLandUseH > 0)
-  [ 
+  [
     set meanHerdingIntensity (mean [intensity] of stakeholders with [activity = "H"]) / hrmi
     set meanHerdingIndependence (mean [independence] of stakeholders with [activity = "H"])
   ]
-  [ 
+  [
     set meanHerdingIntensity ""
     set meanHerdingIndependence ""
   ]
-  
+
   update-patches
-  
+
 end
 
 to update-patches
-  
+
   ask patches
   [
     set pcolor brown
@@ -484,7 +488,7 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 to load-experiment
-  
+
 let FilePath "SensAnalysis//exp//"
 let filename (word FilePath "exp_" expNumber ".csv")
 file-open filename
@@ -499,7 +503,7 @@ while [not file-at-end?]
   set initH file-read
   set initF file-read
   set hrmi file-read
-  
+
   set endSimulation file-read ;- 1500 ;; use this to cut down the time of simulation (e.g. if the file reads 2000)
 ]
 file-close
@@ -1606,7 +1610,7 @@ Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 
 @#$#@#$#@
-NetLogo 5.2.0
+NetLogo 5.3.1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
